@@ -230,6 +230,9 @@ func main() {
 				end = totalCount
 			}
 			paginatedRules := config.Endpoints[start:end]
+			if paginatedRules == nil {
+				paginatedRules = []ForwardingRule{}
+			}
 
 			c.JSON(200, gin.H{
 				"rules": paginatedRules,

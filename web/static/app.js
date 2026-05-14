@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
             const data = await response.json();
             if (!Array.isArray(data.rules)) {
-                throw new Error('服务器返回的数据格式不正确');
+                data.rules = [];
             }
 
             totalRules = data.total;
