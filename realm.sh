@@ -367,6 +367,20 @@ install_panel() {
 
     cp "$found_bin" "$PANEL_BIN"
     chmod +x "$PANEL_BIN"
+
+    # 复制静态资源和模板
+    [ -d "$tmp_dir/static" ]    && cp -r "$tmp_dir/static"    "$PANEL_DIR/"
+    [ -d "$tmp_dir/templates" ] && cp -r "$tmp_dir/templates" "$PANEL_DIR/"
+    # 兼容 zip 内有子目录的情况
+    local sub_dir
+    sub_dir=$(find "$tmp_dir" -mindepth 1 -maxdepth 1 -type d | head -1)
+    if [ -n "$sub_dir" ]; then
+        [ -d "$sub_dir/static" ]    && cp -r "$sub_dir/static"    "$PANEL_DIR/"
+        [ -d "$sub_dir/templates" ] && cp -r "$sub_dir/templates" "$PANEL_DIR/"
+    fi
+    # 复制默认配置（不覆盖已有配置）
+    [ -f "$tmp_dir/config.toml" ] && [ ! -f "$PANEL_DIR/config.toml" ] && cp "$tmp_dir/config.toml" "$PANEL_DIR/"
+
     rm -rf "$tmp_dir"
 
     cat <<EOF > /etc/systemd/system/realm-panel.service
