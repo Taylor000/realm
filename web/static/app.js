@@ -42,26 +42,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function fetchForwardingRules() {
+    async function fetchForwardingRules(targetPage = currentPage) {
         try {
-            const response = await fetch(`/get_rules?page=${currentPage}&size=${pageSize}`, {
+            const response = await fetch(`/get_rules?page=${targetPage}&size=${pageSize}`, {
                 method: 'GET',
                 headers: {
                     'Cache-Control': 'no-cache',
                     'Pragma': 'no-cache'
                 },
             });
-    
+
             if (!response.ok) {
                 throw new Error('获取规则失败：' + response.statusText);
             }
-    
+
             const data = await response.json();
             if (!Array.isArray(data.rules)) {
                 data.rules = [];
             }
 
             totalRules = data.total;
+            const totalPages = Math.max(1, Math.ceil(totalRules / pageSize));
+            currentPage = Math.min(Math.max(1, targetPage), totalPages);
+
             allRules = data.rules.map(rule => {
                 const listen = rule.Listen || rule.listen;
                 const remote = rule.Remote || rule.remote;
@@ -76,6 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
             outputDiv.textContent = `获取转发规则失败: ${error.message}`;
             return [];
         }
+    }
+
+    async function refreshRulesAfterChange() {
+        const totalPagesAfterChange = Math.max(1, Math.ceil(totalRules / pageSize));
+        await fetchForwardingRules(totalPagesAfterChange);
     }
 
     function splitHostPort(value) {
@@ -191,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             outputDiv.textContent = '规则已删除，服务已重启';
-            await fetchForwardingRules();
+            await refreshRulesAfterChange();
             await updateServiceStatus();
         } catch (error) {
             console.error('删除失败:', error);
@@ -242,7 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
             localPortInput.value = '';
             remoteIPInput.value = '';
             remotePortInput.value = '';
-            await fetchForwardingRules();
+            totalRules += 1;
+            await refreshRulesAfterChange();
             await updateServiceStatus();
         } catch (error) {
             console.error('添加失败:', error);
@@ -314,7 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         rulesInput.value = '';
-        await fetchForwardingRules();
+        if (hasSuccess) {
+            totalRules += rules.length - failedRules.length;
+        }
+        await refreshRulesAfterChange();
         await updateServiceStatus();
 
         if (failedRules.length > 0) {
