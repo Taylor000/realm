@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"sync"
 
@@ -89,7 +88,7 @@ func saveConfigLocked() error {
 	var buf bytes.Buffer
 	encoder := toml.NewEncoder(&buf)
 
-	if err := encoder.Encode(map[string]interface{}{"network": config.Network}); err != nil {
+	if err := encoder.Encode(map[string]any{"network": config.Network}); err != nil {
 		return err
 	}
 
@@ -158,6 +157,16 @@ func AuthRequired() gin.HandlerFunc {
 	}
 }
 
+func sessionOptions(maxAge int) sessions.Options {
+	return sessions.Options{
+		Path:     "/",
+		MaxAge:   maxAge,
+		HttpOnly: true,
+		Secure:   panelConfig.HTTPS.Enabled,
+		SameSite: http.SameSiteStrictMode,
+	}
+}
+
 func HTTPSRedirect() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if panelConfig.HTTPS.Enabled && c.Request.TLS == nil {
@@ -187,6 +196,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	serviceManager := newServiceManager()
 
 	sessionSecret := panelConfig.Server.SessionSecret
 	if sessionSecret == "" {
@@ -197,6 +207,7 @@ func main() {
 		sessionSecret = hex.EncodeToString(b)
 	}
 	store := cookie.NewStore([]byte(sessionSecret))
+	store.Options(sessionOptions(3600 * 2))
 	r.Use(sessions.Sessions("realm_session", store))
 	r.Use(HTTPSRedirect())
 
@@ -224,9 +235,7 @@ func main() {
 		if loginData.Password == panelConfig.Auth.Password {
 			session := sessions.Default(c)
 			session.Set("user", true)
-			session.Options(sessions.Options{
-				MaxAge: 3600 * 2, // 2小时
-			})
+			session.Options(sessionOptions(3600 * 2))
 			if err := session.Save(); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Session保存失败"})
 				return
@@ -250,9 +259,9 @@ func main() {
 		})
 
 		authorized.GET("/get_rules", func(c *gin.Context) {
-				c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-				c.Header("Pragma", "no-cache")
-				c.Header("Expires", "0")
+			c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+			c.Header("Pragma", "no-cache")
+			c.Header("Expires", "0")
 			pageStr := c.Query("page")
 			sizeStr := c.Query("size")
 			page, err := strconv.Atoi(pageStr)
@@ -362,8 +371,7 @@ func main() {
 		})
 
 		authorized.POST("/start_service", func(c *gin.Context) {
-			cmd := exec.Command("systemctl", "start", "realm")
-			if err := cmd.Run(); err != nil {
+			if err := serviceManager.Start("realm"); err != nil {
 				c.JSON(500, gin.H{"error": "服务启动失败"})
 				return
 			}
@@ -372,8 +380,7 @@ func main() {
 		})
 
 		authorized.POST("/stop_service", func(c *gin.Context) {
-			cmd := exec.Command("systemctl", "stop", "realm")
-			if err := cmd.Run(); err != nil {
+			if err := serviceManager.Stop("realm"); err != nil {
 				c.JSON(500, gin.H{"error": "服务停止失败"})
 				return
 			}
@@ -382,8 +389,7 @@ func main() {
 		})
 
 		authorized.POST("/restart_service", func(c *gin.Context) {
-			cmd := exec.Command("systemctl", "restart", "realm")
-			if err := cmd.Run(); err != nil {
+			if err := serviceManager.Restart("realm"); err != nil {
 				c.JSON(500, gin.H{"error": "服务重启失败"})
 				return
 			}
@@ -392,25 +398,16 @@ func main() {
 		})
 
 		authorized.GET("/check_status", func(c *gin.Context) {
-				c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
-				c.Header("Pragma", "no-cache")
-				c.Header("Expires", "0")
-			cmd := exec.Command("systemctl", "is-active", "--quiet", "realm")
-			err := cmd.Run()
+			c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+			c.Header("Pragma", "no-cache")
+			c.Header("Expires", "0")
 
-			var status string
+			active, err := serviceManager.IsActive("realm")
+			status := "启用"
 			if err != nil {
-				if exitError, ok := err.(*exec.ExitError); ok {
-					if exitError.ExitCode() == 3 {
-						status = "未启用"
-					} else {
-						status = "未知状态"
-					}
-				} else {
-					status = "检查失败"
-				}
-			} else {
-				status = "启用"
+				status = "未知状态"
+			} else if !active {
+				status = "未启用"
 			}
 
 			c.JSON(200, gin.H{"status": status})
@@ -458,4 +455,3 @@ func main() {
 		r.Run(fmt.Sprintf(":%d", port))
 	}
 }
-

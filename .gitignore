@@ -1,5 +1,8 @@
 # Binaries
 web/realm_web
+dist/
+*.zip
+*.tar.gz
 
 # Certificates
 certificate/
