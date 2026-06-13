@@ -157,7 +157,8 @@ get_panel_status() {
 
 validate_port() {
     local port
-    port=$(printf '%s' "$1" | tr -d '\000-\037\177')
+    # 使用 [:cntrl:] 字符类清理控制字符，xargs 去除前后空白
+    port=$(printf '%s' "$1" | tr -d '[:cntrl:]' | xargs 2>/dev/null)
     if [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; then
         return 0
     else
@@ -168,7 +169,8 @@ validate_port() {
 
 validate_ip() {
     local ip
-    ip=$(printf '%s' "$1" | tr -d '\000-\037\177')
+    # 使用 [:cntrl:] 字符类清理控制字符，xargs 去除前后空白
+    ip=$(printf '%s' "$1" | tr -d '[:cntrl:]' | xargs 2>/dev/null)
     if [[ -z "$ip" ]]; then
         echo -e "${RED}错误: 地址不能为空。${PLAIN}"
         return 1
@@ -183,7 +185,8 @@ validate_ip() {
 
 check_port_available() {
     local port
-    port=$(printf '%s' "$1" | tr -d '\000-\037\177')
+    # 使用 [:cntrl:] 字符类清理控制字符，xargs 去除前后空白
+    port=$(printf '%s' "$1" | tr -d '[:cntrl:]' | xargs 2>/dev/null)
     if command -v ss >/dev/null; then
         if ss -tulpn | grep ":${port} " | grep -qv "realm"; then
             echo -e "${RED}错误: 本机端口 ${port} 已被其他程序占用。${PLAIN}"
@@ -195,7 +198,8 @@ check_port_available() {
 
 check_rule_exists() {
     local port
-    port=$(printf '%s' "$1" | tr -d '\000-\037\177')
+    # 使用 [:cntrl:] 字符类清理控制字符，xargs 去除前后空白
+    port=$(printf '%s' "$1" | tr -d '[:cntrl:]' | xargs 2>/dev/null)
     if [ -f "$CONFIG_FILE" ]; then
         if grep -qE "listen = \"(\\[::]:${port}|0\\.0\\.0\\.0:${port})\"" "$CONFIG_FILE"; then
             echo -e "${RED}错误: 端口 ${port} 的规则已存在。${PLAIN}"
