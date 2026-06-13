@@ -17,7 +17,7 @@
 
 ```text
 ################################################
-#        Realm 一键转发脚本 (v3.2.5)         #
+#        Realm 一键转发脚本 (v3.2.6)         #
 ################################################
  Realm 状态: 运行中
  面板 状态: 已安装但未启动
@@ -45,7 +45,7 @@
 ### Debian / Ubuntu / CentOS
 
 ```bash
-curl -L https://github.com/wcwq98/realm/releases/download/v3.2.5/realm.sh -o realm.sh && chmod +x realm.sh && ./realm.sh
+curl -L https://github.com/wcwq98/realm/releases/download/v3.2.6/realm.sh -o realm.sh && chmod +x realm.sh && ./realm.sh
 ```
 
 或使用主分支最新版：
