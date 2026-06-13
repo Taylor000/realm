@@ -1,17 +1,18 @@
 #!/bin/bash
 
 # ==========================================
-# Realm 一键转发脚本 v3.2.5
+# Realm 一键转发脚本 v3.2.6
 # 更新日志:
-# 1. 新增 Alpine Linux / OpenRC 支持
-# 2. Alpine 自动选择 musl 版 Realm 二进制
-# 3. 面板服务控制兼容 systemd 与 OpenRC
-# 4. 构建产物改为 GitHub Actions 自动生成
+# 1. 修复 Alpine Linux (musl) 下 IP/域名正则校验失败的问题
+# 2. 新增 Alpine Linux / OpenRC 支持
+# 3. Alpine 自动选择 musl 版 Realm 二进制
+# 4. 面板服务控制兼容 systemd 与 OpenRC
+# 5. 构建产物改为 GitHub Actions 自动生成
 # ==========================================
 
 # --- 基础配置 ---
-sh_ver="3.2.5"
-panel_ver="v3.2.5"
+sh_ver="3.2.6"
+panel_ver="v3.2.6"
 
 # 颜色定义
 RED="\033[31m"
@@ -175,7 +176,7 @@ validate_ip() {
         echo -e "${RED}错误: 地址不能为空。${PLAIN}"
         return 1
     fi
-    if [[ "$ip" =~ ^[a-zA-Z0-9.:\[\]-]+$ ]]; then
+    if [[ "$ip" =~ ^[][a-zA-Z0-9.:-]+$ ]]; then
         return 0
     else
         echo -e "${RED}错误: 无效的 IP 或域名格式。${PLAIN}"
