@@ -24,7 +24,7 @@ jobs:
           cache-dependency-path: web/go.sum
 
       - name: Prepare script asset
-        run: chmod +x realm.sh setup.sh realm-runner.sh switch-to-realm.sh
+        run: chmod +x realm.sh setup.sh realm-runner.sh switch-to-realm.sh clear-rules.sh uninstall.sh
 
       - name: Build amd64
         working-directory: web
@@ -52,6 +52,8 @@ jobs:
             setup.sh
             realm-runner.sh
             switch-to-realm.sh
+            clear-rules.sh
+            uninstall.sh
             realm-panel-linux-amd64.zip
             realm-panel-linux-arm64.zip
           generate_release_notes: true

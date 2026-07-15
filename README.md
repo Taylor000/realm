@@ -47,6 +47,26 @@ KEEP_NFT=1 bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/m
 bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/switch-to-realm.sh)
 ```
 
+## 清规则 / 卸载
+
+只清除当前 Realm 生效规则并停止 `realm.service`，保留 `/etc/nat.conf`：
+
+```bash
+bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/clear-rules.sh)
+```
+
+卸载 Realm 服务和程序，默认保留 `/etc/nat.conf`：
+
+```bash
+bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/uninstall.sh)
+```
+
+连规则文件也删除：
+
+```bash
+REMOVE_REALM_RULES=1 bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/uninstall.sh)
+```
+
 ## 编辑规则
 
 ```bash
