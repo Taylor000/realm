@@ -13,6 +13,7 @@ RULES_FILE="/etc/nat.conf"
 REALM_CONFIG_DIR="/root/.realm"
 REALM_CONFIG_FILE="${REALM_CONFIG_DIR}/config.toml"
 RUNNER_PATH="/usr/local/bin/realm-runner"
+STATUS_PATH="/usr/local/bin/forward-status"
 SERVICE_FILE="/etc/systemd/system/realm.service"
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -90,6 +91,8 @@ install_runner() {
     echo "Installing realm runner..."
     curl -fsSL "${RAW_BASE_URL}/realm-runner.sh" -o "$RUNNER_PATH"
     chmod 755 "$RUNNER_PATH"
+    curl -fsSL "${RAW_BASE_URL}/status.sh" -o "$STATUS_PATH"
+    chmod 755 "$STATUS_PATH"
 }
 
 write_default_rules() {
@@ -187,5 +190,6 @@ echo ""
 echo "After saving the rules file, realm.service will reload automatically."
 echo "If nat.service exists, it has been disabled and ${RULES_FILE} has been kept."
 echo "Set KEEP_NFT=1 before install if you want to leave nat.service untouched."
+echo "Current backend: forward-status"
 echo "Status: systemctl status realm"
 echo "Logs:   journalctl -fu realm"

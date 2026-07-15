@@ -87,6 +87,12 @@ systemctl enable realm
 journalctl -fu realm
 ```
 
+## 快速查看当前使用哪个服务
+
+```bash
+forward-status
+```
+
 ## 菜单脚本
 
 原交互式脚本仍保留：
