@@ -115,6 +115,7 @@ write_service() {
 Description=Realm Forwarding Service
 After=network-online.target
 Wants=network-online.target
+Conflicts=nat.service
 
 [Service]
 Type=simple
@@ -135,15 +136,28 @@ EOF
     systemctl restart realm
 }
 
-disable_nft_service_if_requested() {
-    if [ "${DISABLE_NFT:-0}" != "1" ]; then
-        if systemctl is-active --quiet nat 2>/dev/null; then
-            echo "Notice: nat.service is still running. If you are switching from nft, run this installer with DISABLE_NFT=1."
-        fi
+nft_service_exists() {
+    systemctl list-unit-files nat.service --no-legend 2>/dev/null | grep -q '^nat\.service' ||
+        systemctl status nat >/dev/null 2>&1
+}
+
+migrate_nft_service_if_present() {
+    if [ "${KEEP_NFT:-0}" = "1" ]; then
+        echo "KEEP_NFT=1 is set, leaving nat.service untouched."
         return
     fi
 
-    echo "Disabling nft nat.service and clearing nft rules. /etc/nat.conf will be kept."
+    if ! nft_service_exists; then
+        return
+    fi
+
+    echo "Detected nft nat.service. Switching to realm and keeping ${RULES_FILE}."
+    if [ -f "$RULES_FILE" ]; then
+        backup_file="${RULES_FILE}.realm-switch.$(date +%Y%m%d%H%M%S).bak"
+        cp -p "$RULES_FILE" "$backup_file"
+        echo "Rules backup: ${backup_file}"
+    fi
+
     systemctl stop nat 2>/dev/null || true
     systemctl disable nat 2>/dev/null || true
 
@@ -159,7 +173,7 @@ install_dependencies
 install_realm_binary
 install_runner
 write_default_rules
-disable_nft_service_if_requested
+migrate_nft_service_if_present
 write_service
 
 echo ""
@@ -171,6 +185,7 @@ echo "Edit ${RULES_FILE} with rules like:"
 echo "33351:node.example.com:33344"
 echo ""
 echo "After saving the rules file, realm.service will reload automatically."
-echo "Switch from nft and disable nat.service: DISABLE_NFT=1 bash <(curl -sSLf ${RAW_BASE_URL}/setup.sh)"
+echo "If nat.service exists, it has been disabled and ${RULES_FILE} has been kept."
+echo "Set KEEP_NFT=1 before install if you want to leave nat.service untouched."
 echo "Status: systemctl status realm"
 echo "Logs:   journalctl -fu realm"

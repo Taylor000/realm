@@ -34,14 +34,26 @@ bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/setup.s
 - 创建 `/etc/nat.conf`，如果已存在则保留
 - 创建并启动 `realm.service`
 - 设置 `realm.service` 开机自启
+- 如果检测到 nft 项目的 `nat.service`，自动停用它并清理 nft 表，但保留 `/etc/nat.conf`
 
-如果是从 nft 项目切换过来，并且要停用原来的 `nat.service`，使用：
+从 nft 项目切换时，直接执行一键安装即可。脚本会复用原来的 `/etc/nat.conf`：
 
 ```bash
-DISABLE_NFT=1 bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/setup.sh)
+bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/setup.sh)
 ```
 
-这个命令会停止并禁用 nft 的 `nat.service`，清理 nft 生成的表，但继续保留 `/etc/nat.conf`。
+切换时会自动：
+
+- 备份 `/etc/nat.conf`
+- 停止并禁用 nft 的 `nat.service`
+- 清理 nft 生成的表
+- 启动并启用 `realm.service`
+
+如果只是想安装 Realm 但暂时不动 nft 服务：
+
+```bash
+KEEP_NFT=1 bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/setup.sh)
+```
 
 ## 配置
 
