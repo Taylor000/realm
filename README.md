@@ -4,7 +4,7 @@
 
 本脚本在原教程基础上增加了 Realm 安装、转发规则管理、服务重启、脚本更新和可视化面板管理功能。
 
-## v3.2.5 更新重点
+## v3.2.6 更新重点
 
 - 支持 Alpine Linux。
 - Alpine 自动使用 OpenRC 管理 `realm` 和 `realm-panel` 服务。
@@ -45,13 +45,13 @@
 ### Debian / Ubuntu / CentOS
 
 ```bash
-curl -L https://github.com/wcwq98/realm/releases/download/v3.2.6/realm.sh -o realm.sh && chmod +x realm.sh && ./realm.sh
+curl -L https://raw.githubusercontent.com/Taylor000/realm/refs/heads/main/realm.sh -o realm.sh && chmod +x realm.sh && ./realm.sh
 ```
 
-或使用主分支最新版：
+如果需要固定版本，也可以使用 release 资产：
 
 ```bash
-curl -L https://raw.githubusercontent.com/wcwq98/realm/refs/heads/main/realm.sh -o realm.sh && chmod +x realm.sh && ./realm.sh
+curl -L https://github.com/Taylor000/realm/releases/download/v3.2.6/realm.sh -o realm.sh && chmod +x realm.sh && ./realm.sh
 ```
 
 ### Alpine Linux
@@ -60,7 +60,7 @@ Alpine 默认可能没有 Bash，先安装运行依赖：
 
 ```sh
 apk add --no-cache bash curl
-curl -L https://raw.githubusercontent.com/wcwq98/realm/refs/heads/main/realm.sh -o realm.sh
+curl -L https://raw.githubusercontent.com/Taylor000/realm/refs/heads/main/realm.sh -o realm.sh
 chmod +x realm.sh
 bash ./realm.sh
 ```

@@ -13,6 +13,12 @@
 # --- 基础配置 ---
 sh_ver="3.2.6"
 panel_ver="v3.2.6"
+repo_owner="Taylor000"
+repo_name="realm"
+repo_branch="${REALM_REPO_BRANCH:-main}"
+repo_slug="${repo_owner}/${repo_name}"
+raw_base_url="https://raw.githubusercontent.com/${repo_slug}/${repo_branch}"
+release_base_url="https://github.com/${repo_slug}/releases/download"
 
 # 颜色定义
 RED="\033[31m"
@@ -614,7 +620,7 @@ install_panel() {
     esac
 
     mkdir -p "$PANEL_DIR"
-    local url="https://github.com/wcwq98/realm/releases/download/${panel_ver}/${p_file}"
+    local url="${release_base_url}/${panel_ver}/${p_file}"
     local tmp_zip="/tmp/${p_file}"
     local tmp_dir="/tmp/realm_panel_$$"
 
@@ -679,7 +685,7 @@ uninstall_panel() {
 
 # --- 脚本更新 ---
 Update_Shell() {
-    local url="https://raw.githubusercontent.com/wcwq98/realm/main/realm.sh"
+    local url="${raw_base_url}/realm.sh"
     local new_ver=$(wget -qO- "$url" | grep 'sh_ver="' | awk -F "=" '{print $NF}' | tr -d '"' | head -1)
     [[ -z "$new_ver" ]] && { echo -e "${RED}检测失败${PLAIN}"; return; }
     [[ "$new_ver" == "$sh_ver" ]] && { echo "已是最新"; return; }
