@@ -55,6 +55,16 @@ bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/setup.s
 KEEP_NFT=1 bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/setup.sh)
 ```
 
+## 从 nft 切到 Realm
+
+两个项目共用 `/etc/nat.conf`。如果当前使用 nft，执行：
+
+```bash
+bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/switch-to-realm.sh)
+```
+
+脚本会备份并保留 `/etc/nat.conf`，停止并禁用 `nat.service`，清理 nft 表，然后安装并启动 `realm.service`。
+
 ## 配置
 
 编辑 `/etc/nat.conf`：
