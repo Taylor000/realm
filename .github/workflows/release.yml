@@ -24,7 +24,7 @@ jobs:
           cache-dependency-path: web/go.sum
 
       - name: Prepare script asset
-        run: chmod +x realm.sh
+        run: chmod +x realm.sh setup.sh realm-runner.sh
 
       - name: Build amd64
         working-directory: web
@@ -49,6 +49,8 @@ jobs:
         with:
           files: |
             realm.sh
+            setup.sh
+            realm-runner.sh
             realm-panel-linux-amd64.zip
             realm-panel-linux-arm64.zip
           generate_release_notes: true

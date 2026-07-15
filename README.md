@@ -1,142 +1,106 @@
-## Realm 一键转发脚本
+# Realm 一键转发脚本
 
-参考自 https://www.nodeseek.com/post-183613-1 ，感谢原教程作者。
+自用的 Realm 端口转发工具，默认面向 Debian / Ubuntu 服务器。
 
-本脚本在原教程基础上增加了 Realm 安装、转发规则管理、服务重启、脚本更新和可视化面板管理功能。
-
-## v3.2.6 更新重点
-
-- 支持 Alpine Linux。
-- Alpine 自动使用 OpenRC 管理 `realm` 和 `realm-panel` 服务。
-- Alpine 自动选择官方 `unknown-linux-musl` 版 Realm 二进制。
-- Debian / Ubuntu / CentOS 等 systemd 系统保留原有行为。
-- 面板后端兼容 systemd 与 OpenRC 服务控制。
-- Release 构建产物改为 GitHub Actions 自动生成，不再提交本地二进制。
-
-## 脚本界面预览
+默认读取 nft 项目同一个本地规则文件 `/etc/nat.conf`，配置写法保持一致：
 
 ```text
-################################################
-#        Realm 一键转发脚本 (v3.2.6)         #
-################################################
- Realm 状态: 运行中
- 面板 状态: 已安装但未启动
-------------------------------------------------
-  1. 安装 / 重置 Realm
-  2. 卸载 Realm
-------------------------------------------------
-  3. 添加转发规则
-  4. 添加端口段转发
-  5. 删除转发规则
-  6. 查看当前配置
-------------------------------------------------
-  7. 启动服务
-  8. 停止服务
-  9. 重启服务
-------------------------------------------------
-  10. 更新脚本
-  11. 面板管理
-  0. 退出脚本
-################################################
+本地端口:远程IP或域名:远程端口
 ```
+
+保存规则文件后，`realm.service` 会自动检测变更并重启 Realm。
+
+## 功能
+
+- 默认规则文件：`/etc/nat.conf`
+- 简化转发格式：`本地端口:远程IP或域名:远程端口`
+- 自动转换为 Realm TOML 配置：`/root/.realm/config.toml`
+- 支持 IPv4 / 域名 / IPv6 目标地址
+- 支持 systemd 开机自启
+- 保留原交互式脚本 `realm.sh`
+- 可选安装 Web 管理面板
 
 ## 一键安装
 
-### Debian / Ubuntu / CentOS
+```bash
+bash <(curl -sSLf https://raw.githubusercontent.com/Taylor000/realm/main/setup.sh)
+```
+
+安装脚本会自动完成这些步骤：
+
+- 安装基础依赖：`curl`、`wget`、`tar`
+- 下载官方 Realm 二进制
+- 安装 `/usr/local/bin/realm-runner`
+- 创建 `/etc/nat.conf`，如果已存在则保留
+- 创建并启动 `realm.service`
+- 设置 `realm.service` 开机自启
+
+## 配置
+
+编辑 `/etc/nat.conf`：
 
 ```bash
-curl -L https://raw.githubusercontent.com/Taylor000/realm/refs/heads/main/realm.sh -o realm.sh && chmod +x realm.sh && ./realm.sh
+vim /etc/nat.conf
 ```
 
-如果需要固定版本，也可以使用 release 资产：
-
-```bash
-curl -L https://github.com/Taylor000/realm/releases/download/v3.2.6/realm.sh -o realm.sh && chmod +x realm.sh && ./realm.sh
-```
-
-### Alpine Linux
-
-Alpine 默认可能没有 Bash，先安装运行依赖：
-
-```sh
-apk add --no-cache bash curl
-curl -L https://raw.githubusercontent.com/Taylor000/realm/refs/heads/main/realm.sh -o realm.sh
-chmod +x realm.sh
-bash ./realm.sh
-```
-
-## 系统支持
-
-| 系统 | 包管理器 | 服务管理 | Realm 二进制 |
-| --- | --- | --- | --- |
-| Debian / Ubuntu | `apt-get` | systemd | `unknown-linux-gnu` |
-| CentOS / RHEL | `yum` | systemd | `unknown-linux-gnu` |
-| Alpine Linux | `apk` | OpenRC | `unknown-linux-musl` |
-
-支持架构：
-
-- `x86_64` / `amd64`
-- `aarch64` / `arm64`
-
-## 默认 Realm 配置
-
-脚本首次部署环境时会自动创建 `/root/.realm/config.toml`：
-
-```toml
-[network]
-no_tcp = false
-use_udp = true
-
-# 参考模板
-# [[endpoints]]
-# listen = "0.0.0.0:本地端口"
-# remote = "落地机IP:目标端口"
-
-[[endpoints]]
-listen = "0.0.0.0:1234"
-remote = "0.0.0.0:5678"
-```
-
-## 可视化面板配置
-
-面板配置文件路径：
+示例：
 
 ```text
-/root/realm/web/config.toml
+# 本机 33351 端口转发到 node.example.com:33344
+33351:node.example.com:33344
+
+# 本机 33352 端口转发到 1.2.3.4:443
+33352:1.2.3.4:443
+
+# IPv6 目标地址使用中括号
+33353:[2001:db8::1]:443
 ```
 
-默认配置：
+有效规则不要带 `#`。保存文件后，服务会自动重新加载，不需要手动重启。
 
-```toml
-[auth]
-password = "123456"
+Realm 只读取这种三段式简单规则。`SINGLE,...`、`RANGE,...`、`REDIRECT,...` 等 nft 兼容旧格式会被忽略。
 
-[server]
-port = 8081
-session_secret = ""
+## 服务管理
 
-[https]
-enabled = false
-cert_file = "./certificate/cert.pem"
-key_file = "./certificate/private.key"
+```bash
+# 查看状态
+systemctl status realm
 
-[realm]
-config_path = "/root/.realm/config.toml"
+# 启动
+systemctl start realm
+
+# 停止
+systemctl stop realm
+
+# 重启
+systemctl restart realm
+
+# 开机自启
+systemctl enable realm
+
+# 实时日志
+journalctl -fu realm
 ```
 
-建议安装后立即修改默认密码。生产环境建议启用 HTTPS，并设置固定 `session_secret`。
+## 交互式脚本
 
-## Release 自动构建
+如果需要使用原菜单式管理：
 
-推送 `v*` tag 后，GitHub Actions 会自动构建面板后端并发布：
+```bash
+curl -L https://raw.githubusercontent.com/Taylor000/realm/main/realm.sh -o realm.sh
+chmod +x realm.sh
+./realm.sh
+```
+
+## Web 面板
+
+`realm.sh` 里仍保留 Web 面板安装入口。面板 release 资产由 GitHub Actions 在推送 `v*` tag 后自动构建：
 
 - `realm-panel-linux-amd64.zip`
 - `realm-panel-linux-arm64.zip`
 
-本仓库不再提交 `web/realm_web`、`dist/`、`*.zip`、`*.tar.gz` 等构建产物。
+## 官方 Realm 项目
 
-## 官方 Realm 文档
-
-更多 Realm 配置请参考官方项目：
+Realm 核心二进制来自官方项目：
 
 https://github.com/zhboner/realm
