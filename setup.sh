@@ -135,10 +135,31 @@ EOF
     systemctl restart realm
 }
 
+disable_nft_service_if_requested() {
+    if [ "${DISABLE_NFT:-0}" != "1" ]; then
+        if systemctl is-active --quiet nat 2>/dev/null; then
+            echo "Notice: nat.service is still running. If you are switching from nft, run this installer with DISABLE_NFT=1."
+        fi
+        return
+    fi
+
+    echo "Disabling nft nat.service and clearing nft rules. /etc/nat.conf will be kept."
+    systemctl stop nat 2>/dev/null || true
+    systemctl disable nat 2>/dev/null || true
+
+    if command_exists nft; then
+        nft delete table ip self-nat 2>/dev/null || true
+        nft delete table ip6 self-nat 2>/dev/null || true
+        nft delete table ip self-filter 2>/dev/null || true
+        nft delete table ip6 self-filter 2>/dev/null || true
+    fi
+}
+
 install_dependencies
 install_realm_binary
 install_runner
 write_default_rules
+disable_nft_service_if_requested
 write_service
 
 echo ""
@@ -150,5 +171,6 @@ echo "Edit ${RULES_FILE} with rules like:"
 echo "33351:node.example.com:33344"
 echo ""
 echo "After saving the rules file, realm.service will reload automatically."
+echo "Switch from nft and disable nat.service: DISABLE_NFT=1 bash <(curl -sSLf ${RAW_BASE_URL}/setup.sh)"
 echo "Status: systemctl status realm"
 echo "Logs:   journalctl -fu realm"
